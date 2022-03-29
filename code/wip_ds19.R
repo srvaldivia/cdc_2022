@@ -1,31 +1,34 @@
 library(tidyverse)
 library(sf)
 library(mapview)
-library(sfnetworks)
-library(tidygraph)
-library(igraph)
 
 
-manzanas_or <- st_read(dsn = "Z:/_Carto base/INE.gdb",
-                       as_tibble = TRUE,
-                       query = "SELECT * FROM \"Variables_C17_Manzana\" WHERE (PROVINCIA = 'SANTIAGO' OR COMUNA = 'SAN BERNARDO'
-                       OR COMUNA = 'PUENTE ALTO') AND NOT (DISTRITO = 'LO AGUIRRE' OR DISTRITO = 'LO HERRERA'
-                       OR DISTRITO = 'LA RINCONADA' OR DISTRITO = 'PUDAHUEL')")
 
-manzanas <- manzanas_or %>% 
-  janitor::clean_names() %>% 
-  select(cod_comuna:cod_categoria) %>%
-  rename(manzent = manzent_i) %>% 
-  st_cast("POLYGON") %>% 
-  mutate(id_manzent = row_number()) %>% 
-  select(cod_comuna:manzent, id_manzent, everything())
+# leer datos --------------------------------------------------------------
 
+# 1. manzanas
+# lee layer manzanas poly originales
+# st_read(dsn = "Z:/_Carto base/INE.gdb",
+#         as_tibble = TRUE,
+#         query = "SELECT * FROM \"Variables_C17_Manzana\" WHERE (PROVINCIA = 'SANTIAGO' OR COMUNA = 'SAN BERNARDO'
+#         OR COMUNA = 'PUENTE ALTO') AND NOT (DISTRITO = 'LO AGUIRRE' OR DISTRITO = 'LO HERRERA'
+#         OR DISTRITO = 'LA RINCONADA' OR DISTRITO = 'PUDAHUEL')") %>%
+#   janitor::clean_names() %>% 
+#   select(cod_comuna:cod_categoria) %>%
+#   rename(manzent = manzent_i) %>% 
+#   st_cast("POLYGON") %>% 
+#   mutate(id_manzent = row_number()) %>% 
+#   select(cod_comuna:manzent, id_manzent, everything()) %>% 
+#   st_write(dsn = "datos_input/manzanas_ams.geojson")
+
+
+manzanas <- st_read(dsn = "datos_input/manzanas_ams.geojson", as_tibble = TRUE)
 
 manzanas_centroides <- st_point_on_surface(manzanas)
 
 
-
-setwd("Z:/_Carto base/SIEDU.gdb")
+# 2. areas verdes
+# setwd("Z:/_Carto base/SIEDU.gdb")
 
 temp_wd <- "Z:/_Estudios/2018 IAC/Índice de accesibilidad urbana/GIS.gdb"
 
@@ -41,8 +44,7 @@ layers_old <- st_layers(temp_wd)$name %>%
 
 walk(.x = layers_old,
      .f = function (x) {
-       # layers_old <- tolower(x) %>% 
-       #   str_replace_all(pattern = "bpu", replacement = "bpu_")
+       layers_old <- tolower(x)
        assign(
          x = layers_old,
          value = sf::st_read(dsn = temp_wd,
