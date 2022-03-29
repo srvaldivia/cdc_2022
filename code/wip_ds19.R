@@ -33,20 +33,21 @@ manzanas_centroides <- st_point_on_surface(manzanas)
 temp_wd <- "Z:/_Estudios/2018 IAC/Índice de accesibilidad urbana/GIS.gdb"
 
 # vector with layer names
-layers_old <- st_layers(temp_wd)$name %>%
+layers_names <- st_layers(temp_wd)$name %>%
   tibble() %>% 
   filter(
-    str_detect(string = ., pattern = "_\\d_AMS$")
+    str_detect(string = .,
+               pattern = "_[2|3|4]_AMS$") #"_\\d_AMS$" \\d encuentra cualquier dígito
   ) %>%
   arrange(.) %>% 
   pull(.)
 
 
-walk(.x = layers_old,
+walk(.x = layers_names,
      .f = function (x) {
-       layers_old <- tolower(x)
+       layers_names <- tolower(x)
        assign(
-         x = layers_old,
+         x = layers_names,
          value = sf::st_read(dsn = temp_wd,
                              layer = x,
                              as_tibble = TRUE),
@@ -54,6 +55,31 @@ walk(.x = layers_old,
          )
        }
      )
+
+# limpia capa
+list(
+  c_av_2_ams,
+  c_av_3_ams,
+  c_av_4_ams
+  ) %>% 
+  set_names(tolower(layers_names)) %>% 
+  map(.f = ~ st_transform(.x, crs = 32719) %>% 
+        select(-c(ESTADO, CLASE, area_Ha, ESTADO_2, AV, ID, layer, OK))) %>%
+  list2env(x = ., .GlobalEnv)
+  
+
+# exportar centroides av 
+st_write(obj = c_av_2_ams, dsn = "datos_input/c_av_2ams.shp", delete_layer = TRUE)
+st_write(obj = c_av_3_ams, dsn = "datos_input/c_av_3ams.shp", delete_layer = TRUE)
+st_write(obj = c_av_4_ams, dsn = "datos_input/c_av_4ams.shp", delete_layer = TRUE)
+
+
+
+
+
+
+
+
 
 
 # networking --------------------------------------------------------------
